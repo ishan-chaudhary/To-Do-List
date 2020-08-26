@@ -8,6 +8,8 @@
   <link rel="stylesheet" type="text/css" href="./css/bootstrap-clockpicker.min.css">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" type="text/css" href="./css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.js"></script>
 </head>
 
 <body>
@@ -19,11 +21,10 @@
           <label for="description">Description</label>
           <input type="text" placeholder="What do you need to do?" name="description" required id="description"><br>
           <label for="dropdown">Select Interviewee</label>
-          <select id="dropdown" name="name">
-            <option value="Personal">Personal</option>
-            <option value="Work">Work</option>
-            <option value="Cleaning">Cleaning</option>
-            <option value="Others">Others</option>
+          <select id="dropdown" name="pid" multiple>
+            <% for(let i of participants) {%>
+            <option value="<%= i._id %>"><%= i.name %></option>
+            <%}%>
           </select><br>
           <label for="date">Date</label>
           <input type="date" name="date" required id="date">
@@ -44,22 +45,32 @@
       </div>
       <div class="col">
         <div id="list-container">
-          <form action="delete-task" method="POST">
+          <form action="/delete" method="POST" id="delete-form">
             <% for(let i of list){ %>
             <div class="list_item">
-              <input type="checkbox" value="<%= i._id %>" name="check<%= i._id %>"
-                class="checks">
-                <button type="button" class="btn btn-info" style="position: absolute;right: 5px;">Edit</button>
+              <input type="checkbox" value="<%= i._id %>" name="check<%= i._id %>" class="checks">
+              <button type="button" class="btn btn-info" style="position: absolute;right: 5px;">Edit</button>
               <p>
               <div>
                 <h2><%= i.description %></h2>
               </div>
               <div style="margin-bottom: 5px;">
-                <p><i class="fas fa-user-clock"></i></p>
-                <p><i class="fas fa-phone"></i></p>
-                <p><i class="fas fa-envelope-open-text"></i></p>
+                <dl>
+                  <dt><i class="fas fa-user-clock"></i></dt>
+                  <% for(let j of i.participants){ %>
+                  <dd><%= j.name %></dd>
+                  <% } %>
+                  <dt><i class="fas fa-phone"></i></dt>
+                  <% for(let j of i.participants){ %>
+                  <dd><%= j.phone %></dd>
+                  <% } %>
+                  <dt><i class="fas fa-envelope-open-text"></i></dt>
+                  <% for(let j of i.participants){ %>
+                  <dd><%= j.email %></dd>
+                  <% } %>
+                </dl>
               </div>
-              <div style="position: absolute;right: 5px; bottom: 20px;">
+              <div style="position: absolute;right: 5px; bottom: 100px;">
                 <i class="far fa-calendar-alt"></i>
                 <p class="mt-3">Start :<%= i.startTime %></p>
                 <p style="padding-top: 5px;">End :<%= i.endTime %></p>
@@ -67,10 +78,10 @@
               </p>
             </div>
             <% } %>
-          </form>
-        </div>
+        </form>
       </div>
     </div>
+  </div>
   </div>
 </body>
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
@@ -83,10 +94,36 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
 <script>
   $('.clockpicker').clockpicker();
-  $('#dropdown').select2();
+  $('#dropdown').select2({
+    closeOnSelect: false
+  });
   function deleteTask() {
-    console.log('hi');
+    let form =  $('#delete-form');
+    form.submit();
   }
+</script>
+<script>
+  <% if (flash.success && flash.success.length > 0) {%>
+    new Noty({
+      theme: 'relax',
+      text: "<%= flash.success %>",
+      type: 'success',
+      layout: 'topRight',
+      timeout: 1500
+
+    }).show();    
+  <%} %>
+
+  <% if (flash.error && flash.error.length > 0) {%>
+    new Noty({
+      theme: 'relax',
+      text: "<%= flash.error %>",
+      type: 'error',
+      layout: 'topRight',
+      timeout: 1500
+
+    }).show();    
+  <%} %>
 </script>
 
 </html>

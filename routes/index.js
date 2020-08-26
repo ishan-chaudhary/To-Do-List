@@ -6,6 +6,7 @@ router.get('/',IndexController.homeController);
 
 
 router.post('/create-list',IndexController.createList);
-router.post('/delete-task',IndexController.DeleteList);
+router.post('/delete',IndexController.DeleteList);
+router.post('/add',IndexController.addParticipant);
 
 module.exports=router;

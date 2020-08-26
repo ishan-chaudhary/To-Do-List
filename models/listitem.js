@@ -5,10 +5,6 @@ const itemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  category: {
-    type: String,
-    required: true
-  },
   startTime: {
     type: Date,
     required: true
@@ -17,11 +13,11 @@ const itemSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  participant: {
+  participants: [{
     type: mongoose.Types.ObjectId,
     required: true,
     ref: 'Participant'
-  }
+  }]
 })
 
 const Item = mongoose.model('item', itemSchema);
