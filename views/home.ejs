@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.3.0/main.min.js"></script>
 </head>
 
-<body>
+<body class="bg-light">
   <div class="container">
     <div class="row mt-5">
       <div class="col">
@@ -47,6 +47,7 @@
       <div class="col-7">
         <div id='calendar'></div>
       </div>
+      <!-- Modal for showing data -->
       <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
           <div class="modal-content">
@@ -59,11 +60,57 @@
             <div class="modal-body" id="modal-body">
             </div>
             <div class="modal-footer">
-              <button type="button" id="delete-task" onclick="window.location.href='/delete'" data-id=""><i class="fas fa-trash-alt"></i> Delete</button>
+              <button type="button" class="btn btn-warning" onclick="edit()">Edit</button>
+              <button type="button" id="delete-task" onclick="window.location.href='/delete'"><i class="fas fa-trash-alt"></i> Delete</button>
             </div>
           </div>
         </div>
       </div>
+  <!--  -->
+
+      <!-- Modal for editing -->
+      <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLongTitle2">Edit Details</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modal-body2">
+              <form action="/edit-list" method="POST" id="edit-form">
+                <label for="description">Description</label>
+                <input type="text" placeholder="What do you need to do?" name="description" required id="edit-description"><br>
+                <label for="dropdown2">Select Interviewee</label>
+                <select id="dropdown2" name="pid" multiple style="width: 200px;">
+                  <% for(let i of participants) {%>
+            <option value="<%= i._id %>"><%= i.name %></option>
+            <%}%>
+                </select><br>
+                <label for="date">Date</label>
+                <input type="date" name="date" required id="edit-date">
+                <br><br>
+                <label for="start-time">Start Time</label>
+                <label for="end-time">End Time</label>
+                <div class="form-row">
+                  <div class="input-group clockpicker col" data-autoclose="true">
+                    <input type="time" class="form-control" value="09:30" name="start_time" id="edit-start-time">
+                  </div>
+                  <div class="input-group clockpicker col" data-autoclose="true">
+                    <input type="time" class="form-control" value="09:30" name="end_time" id="edit-end-time">
+                  </div>
+                </div>
+                <button type="submit" id="add-task">Edit Task</button>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <!-- <button type="button" class="btn btn-warning">Edit</button> -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--  -->
     </div>
   </div>
   </div>
@@ -81,12 +128,19 @@
   $('#dropdown').select2({
     closeOnSelect: false
   });
+  $('#dropdown2').select2({
+    closeOnSelect: false
+  });
+  function edit() {
+    $('#myModal').modal('hide')
+    $('#myModal2').modal('show')
+  }
 </script>
 <script>
   var calendarEl = document.getElementById('calendar');
   var calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
-    themeSystem: 'bootstrap',
+    themeSystem: 'Flatly',
     eventClick: function (info) {
       $('#myModal').modal()
       getInfo(info.event.id)
@@ -104,16 +158,17 @@
             });
   calendar.render();
 </script>
-<script>
-  function getInfo(id) {
-    $.ajax({
-      type: "GET",
-      url: `/info?id=${id}`,
-      success: function (data) {
-        $('#exampleModalLongTitle').text(`
+            <script>
+              function getInfo(id) {
+                $.ajax({
+                  type: "GET",
+                  url: `/info?id=${id}`,
+                  success: function (data) {
+                    $('#exampleModalLongTitle').text(`
          ${moment(data.data.startTime).format('dddd ,MMMM Do YYYY')}`)
-        for (let i = 0; i < data.data.participants.length; i++) {
-          $('#modal-body').append(`
+                    $('#modal-body').empty();
+                    for (let i = 0; i < data.data.participants.length; i++) {
+                      $('#modal-body').append(`
           <h3>${data.data.description}</h3>
           <div style="margin-bottom: 5px;">
                <dl>
@@ -124,18 +179,20 @@
               </div>
               <hr>
           `)
-        }
-        $('#modal-body').append(`              
+                    }
+                    $('#modal-body').append(`              
               <div style="position: absolute;right: 5px; top: 10px;">              
                 <p class="mt-3"><i class="far fa-clock"></i> Start :${moment(data.data.startTime).format('h:mm a')}</p>
                 <p style="padding-top: 5px;"><i class="far fa-clock"></i> End :${moment(data.data.endTime).format('h:mm a')}</p>
         </div>`)
-        $('#delete-task').attr('data-id',data.data._id);
-        $('#delete-task').attr('onclick',`window.location.href = '/delete?id=${data.data._id}'`);
-      }
-    });
-  };
-</script>
+                    $('#delete-task').attr('data-id', data.data._id);
+                    $('#delete-task').attr('onclick', `window.location.href = '/delete?id=${data.data._id}'`);
+                    $('#edit-form').attr('action', `edit-list?id=${data.data._id}`);
+                    $('#edit-description').val(data.data.description);
+                  }
+                });
+              };
+            </script>
             <script>
   <% if (flash.success && flash.success.length > 0) {%>
                 new Noty({
@@ -159,4 +216,5 @@
                 }).show();    
   <%} %>
             </script>
+
 </html>

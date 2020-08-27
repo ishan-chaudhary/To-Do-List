@@ -9,5 +9,6 @@ router.post('/create-list',IndexController.createList);//Create Interview
 router.get('/delete',IndexController.DeleteList);//Delete INterview
 router.post('/add',IndexController.addParticipant);// API for creating participants
 router.get('/info',IndexController.getInfo);
+router.post('/edit-list',IndexController.edit);
 
 module.exports=router;
