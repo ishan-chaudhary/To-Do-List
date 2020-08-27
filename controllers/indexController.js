@@ -1,6 +1,7 @@
 const Item = require('../models/listitem');
 const Participant = require('../models/participant');
 const moment = require('moment');
+const { Mongoose } = require('mongoose');
 
 module.exports.homeController = async function (req, res) {
   try{
@@ -9,21 +10,13 @@ module.exports.homeController = async function (req, res) {
     var ans = [];
     toDoList.forEach(function (item) {
       var temp = {}
-      var startTime = moment(item.startTime).format('dddd ,MMMM Do YYYY, h:mm a');
-      var endTime = moment(item.endTime).format('dddd ,MMMM Do YYYY, h:mm a');
+      var startTime = moment(item.startTime).utc().format();
+      var endTime = moment(item.endTime).utc().format();
       delete temp.__v;
-      temp._id = item._id;
-      temp.description = item.description;
-      temp.startTime = startTime
+      temp.startTime =startTime
       temp.endTime = endTime
-      temp.participants = [];
-      for(let i = 0;i<item.participants.length;i++){
-        temp.participants.push({
-          name : item.participants[i].name,
-          phone : item.participants[i].phone,
-          email : item.participants[i].email,
-        })
-      }
+      temp._id = item._id
+      temp.description = item.description
       ans.push(temp);
     })
     let participants = await Participant.find({});
@@ -33,6 +26,17 @@ module.exports.homeController = async function (req, res) {
     });
   }catch(err){
     if (err) { console.log('error in printing list',err); return; }
+  }
+}
+
+module.exports.getInfo = async (req, res) => {
+  try {
+    let info = await Item.findById(req.query.id).populate('participants');
+    return res.status(200).json({
+      data: info
+    })
+  } catch (err) {
+    if (err) { console.log(err); return; }
   }
 }
 
@@ -88,16 +92,10 @@ module.exports.createList = async function (req, res) {
   }
 }
 
-module.exports.DeleteList = function (req, res) {
-  for (let i in req.body) {
-    Item.findByIdAndDelete(req.body[i], function (err) {
-      if (err) {
-        console.log('error in deleting',err); return;
-      }
-
-    })
-  }
-  return res.redirect('back');
+module.exports.DeleteList = async function (req, res) {
+  await Item.findByIdAndDelete(req.query.id)
+  req.flash('success','Task Delete Successfuly')
+  return res.redirect('/');
 }
 
 module.exports.addParticipant = async (req, res) => {
