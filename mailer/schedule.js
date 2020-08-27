@@ -1,13 +1,14 @@
-const nodeMailer = require('../config/nodemailer');
+const nodeMailer = require('../config/nodmailler');
 
 
 // this is another way of exporting a method
 exports.newInterview = (interview) => {
+
     let htmlString = nodeMailer.renderTemplate({ data: interview }, '/schedule.ejs');
 
     nodeMailer.transporter.sendMail({
         from: 'interview@schedule.in',
-        to: comment.user.email,
+        to: interview.email,
         subject: "New Interview Scheduled!",
         html: htmlString
     }, (err, info) => {

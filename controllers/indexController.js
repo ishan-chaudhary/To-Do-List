@@ -1,7 +1,7 @@
 const Item = require('../models/listitem');
 const Participant = require('../models/participant');
 const moment = require('moment');
-const { Mongoose } = require('mongoose');
+const mailer = require('../mailer/schedule');
 
 module.exports.homeController = async function (req, res) {
   try{
@@ -45,49 +45,64 @@ module.exports.createList = async function (req, res) {
   startDate = new Date(startDate);
   var endDate = req.body.date + "T" + req.body.end_time + "+05:30"
   endDate = new Date(endDate);
-  if(typeof(req.body.pid) != 'object'){
-    req.flash('error','Number of Participants less than 2')
-    return res.redirect('back');
+  if (endDate.getTime() < startDate.getTime()) {
+    req.flash('error', 'End time can not be before start time');
+    res.redirect('back');
   }
-  try {
-    let item = await Item.findOne({
-      $and: [{ participants: {$in:req.body.pid} }, {
-        $or: [{
-          $and: [{ startTime: { $lte: startDate } }, { $and:[{endTime: { $gte: startDate }},{endTime: { $lte: endDate }}] }]
-        }, 
-        {
-          $and: [ {$and:[{startTime: { $gte: startDate }},{startTime: { $lte: endDate }}] }, { endTime: { $gte: endDate } }]
-        },
-        {
-          $and: [{ startTime: { $gte: startDate } }, { endTime: { $lte: endDate } }]
+  else if (typeof (req.body.pid) != 'object') {
+    req.flash('error', 'Number of Participants less than 2')
+    return res.redirect('back');
+  } else {
+    try {
+      let item = await Item.findOne({
+        $and: [{ participants: { $in: req.body.pid } }, {
+          $or: [{
+            $and: [{ startTime: { $lte: startDate } }, { $and: [{ endTime: { $gte: startDate } }, { endTime: { $lte: endDate } }] }]
+          },
+          {
+            $and: [{ $and: [{ startTime: { $gte: startDate } }, { startTime: { $lte: endDate } }] }, { endTime: { $gte: endDate } }]
+          },
+          {
+            $and: [{ startTime: { $gte: startDate } }, { endTime: { $lte: endDate } }]
+          }]
         }]
-      }]
-    }
-    );
-    if (item) {
-      req.flash('error','Time clash with one of the participants')
-      return res.redirect('back');
-    } else {
-      Item.create({
-        description: req.body.description,
-        category: req.body.category,
-        startTime: startDate,
-        endTime: endDate,
-        participants: req.body.pid
-      }, function (err, newConatact) {
-        if (err) {
-          console.log('error in creating', err);
-          return;
+      }
+      );
+      if (item) {
+        req.flash('error', 'Time clash with one of the participants')
+        return res.redirect('back');
+      } else {
+        Item.create({
+          description: req.body.description,
+          category: req.body.category,
+          startTime: startDate,
+          endTime: endDate,
+          participants: req.body.pid
+        }, async function (err, newItem) {
+          if (err) {
+            console.log('error in creating', err);
+            return;
+          }
+          let interview = await Item.findById(newItem._id).populate('participants');
+          for (let i = 0; i < interview.participants.length; i++) {
+            let temp = {
+              name: interview.participants[i].name,
+              email: interview.participants[i].email,
+              start: interview.startTime,
+              end: interview.endTime
+            }
+            //mailer.newInterview(temp)
+          }
+          req.flash('success', 'Interview Scheduled Successfully')
+          return res.redirect('back');
         }
-        req.flash('success','Interview Scheduled Successfully')
+        )
+      }
+    } catch (err) {
+      if (err) {
+        console.log('error in creating', err);
         return res.redirect('back');
       }
-      )
-    }
-  } catch (err) {
-    if (err) {
-      console.log('error in creating', err);
-      return res.redirect('back');
     }
   }
 }

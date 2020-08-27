@@ -16,7 +16,7 @@ let transporter=nodemailer.createTransport({
 let renderTemplate =(data,relativePath) => {
  let mailHTML;
  ejs.renderFile(
-   path.join(__dirname,'../views/mailer',relativePath),
+   path.join(__dirname,'../views',relativePath),
    data,
    function(err,template){
     if(err){console.log('error In sending mail',err);return;}
